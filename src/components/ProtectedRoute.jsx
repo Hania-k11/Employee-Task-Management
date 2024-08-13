@@ -7,7 +7,7 @@ const ProtectedRoute = ({children}) => {
     
   const protectedd = useContext(AuthContext);
 
-  if (!protectedd.isAuthenticated && !protectedd.attempted) {
+  if (!protectedd.isAuthenticated) {
     return <Navigate to="/" />;
   }
 

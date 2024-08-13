@@ -5,7 +5,7 @@ import viteLogo from '/vite.svg'
 import Loginform from './components/Loginform'
 import About from './components/About';
 import Contact from './components/Contact';
-import Home from './components/Home';
+import Home from './components/UserDetails';
 import NoPage from './components/NoPage';
 import { AuthContext } from './context/AuthContext';
 import { BrowserRouter as Router, Route, Routes, BrowserRouter } from 'react-router-dom';
@@ -13,6 +13,8 @@ import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import Protect from './components/Protect';
 import CreateUser from './components/CreateUser';
+import UserDetails from './components/UserDetails';
+import Unauthorized from './components/Unauthorized';
 
 
 function App() {
@@ -38,10 +40,10 @@ function App() {
 
 
 <Route
-            path="/home"
+            path="/user-details"
             element={
               <ProtectedRoute>
-                <Home />
+                <UserDetails />
               </ProtectedRoute>
             }
           />
@@ -61,6 +63,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+            
           <Route path="/create-user" element={<CreateUser />} /> {/* Add the new route */}
           <Route path="*" element={<NoPage />} />
         </Routes>

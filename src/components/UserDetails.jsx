@@ -1,11 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useContext } from 'react';
 import axios from 'axios';
 import Navbar from './Navbar';
+import { useLocation } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
+import Logs from './Logs'; // Import the Logs component
 
-const Home = () => {
+const UserDetails = () => {
+    const home = useContext(AuthContext);
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [logs, setLogs] = useState([]);
+    const [isLogsOpen, setIsLogsOpen] = useState(false); // State to control Logs modal
+    const location = useLocation();
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -23,8 +30,13 @@ const Home = () => {
     }, []);
 
     const handleChangeStatus = async (userid) => {
+        const currentRoute = location.pathname.split('/').pop();
         try {
-            const response = await axios.post('http://localhost:3000/api/toggleUserActivity', { userid });
+            const response = await axios.post('http://localhost:3000/api/toggleUserActivityLog', { 
+                userid, 
+                updatedBy: home.username, 
+                key: currentRoute 
+            });
             alert(response.data.message || 'No message returned from server');
             
             // Update the user's Activity status in the local state
@@ -36,6 +48,21 @@ const Home = () => {
         } catch (error) {
             alert('Failed to change status');
         }
+    };
+
+    const handleViewLog = async (userid) => {
+        try {
+            const response = await axios.get(`http://localhost:3000/api/getUserLogs/${userid}`);
+            setLogs(response.data);
+            setIsLogsOpen(true); // Open the Logs modal
+        } catch (error) {
+            alert('Failed to retrieve logs');
+        }
+    };
+
+    const closeLogs = () => {
+        setIsLogsOpen(false);
+        setLogs([]);
     };
 
     if (loading) {
@@ -95,7 +122,9 @@ const Home = () => {
                                             className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-200">
                                             Change Status
                                         </button>
-                                        <button className="px-3 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition duration-200">
+                                        <button 
+                                            onClick={() => handleViewLog(user.userID)} 
+                                            className="px-3 py-2 bg-gray-500 text-white rounded hover:bg-gray-600 transition duration-200">
                                             View Log
                                         </button>
                                     </div>
@@ -105,8 +134,9 @@ const Home = () => {
                     </tbody>
                 </table>
             </div>
+            <Logs isOpen={isLogsOpen} onClose={closeLogs} logs={logs} />
         </>
     );
 };
 
-export default Home;
+export default UserDetails;

@@ -1,9 +1,10 @@
 import React, { useContext, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
-import Home from './Home';
+import Home from './UserDetails';
 import Unauthorized from './Unauthorized';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import UserDetails from './UserDetails';
 
 const LoginForm = () => {
     const mystate = useContext(AuthContext);
@@ -52,7 +53,7 @@ const LoginForm = () => {
 
     if (mystate.attempted) {
         if (mystate.isAuthenticated) {
-            return <Home />;
+            return <UserDetails />;
         } else {
             return <Unauthorized />;
         }

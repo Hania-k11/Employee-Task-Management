@@ -23,10 +23,10 @@ const Navbar = () => {
           <div className="flex justify-center flex-1">
             <div className="flex items-baseline space-x-4">
               <Link
-                to="/home"
+                to="/user-details"
                 className="text-gray-800 hover:bg-gray-700 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
               >
-                Home
+                Users
               </Link>
               <Link
                 to="/about"

@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import Home from '../components/Home';
+import Home from '../components/UserDetails';
 import Unauthorized from '../components/Unauthorized';
 
 export const AuthContext = createContext(null);
