@@ -37,7 +37,14 @@ const LoginForm = () => {
 
             if (data.success) {
                 mystate.setIsAuthenticated(true);
+                mystate.setUserid(data.userid);
+                mystate.setname(data.username);
+                mystate.setRole(data.role);
+
                 console.log('Authentication successful');
+                console.log('UserID:', data.userid);
+                console.log('Role:', data.role);
+                console.log('Name:', data.username);
             } else {
                 mystate.setIsAuthenticated(false);
                 console.log('Authentication failed');

@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import axios from 'axios';
+import { AuthContext } from '../context/AuthContext';
 
 const CreateUser = () => {
+  const { role } = useContext(AuthContext); // Get the role from AuthContext
+  
   const [formData, setFormData] = useState({
     userName: '',
     email: '',
@@ -18,41 +21,45 @@ const CreateUser = () => {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
 
-
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-
+    // Validate all fields are filled
     for (const [key, value] of Object.entries(formData)) {
       if (!value.trim()) {
-          alert(`Please fill in the ${key}`);
-          return;
+        alert(`Please fill in the ${key}`);
+        return;
       }
-  }
-    try {
-        const response = await axios.post('http://localhost:3000/api/createUser', {
-            userName: formData.userName,
-            userPassword: formData.password,
-            gender: formData.gender,
-            contact: formData.contact,
-            age: formData.age,
-            EmployeeCode: formData.EmployeeCode,
-            Email: formData.email,
-            rolename: formData.rolename
-        });
-
-        console.log("API Response: ", response.data);
-
-        if (!response.data.success) {
-            alert(`Error: ${response.data.message}`);
-        } else {
-            alert(response.data.message);
-        }
-    } catch (err) {
-        console.error("API Error: ", err);
-        alert('An error occurred while creating the user.');
     }
-};
+
+    try {
+      const response = await axios.post('http://localhost:3000/api/createUser', {
+        userName: formData.userName,
+        userPassword: formData.password,
+        gender: formData.gender,
+        contact: formData.contact,
+        age: formData.age,
+        EmployeeCode: formData.EmployeeCode,
+        Email: formData.email,
+        rolename: formData.rolename
+      });
+
+      console.log("API Response: ", response.data);
+
+      if (!response.data.success) {
+        alert(`Error: ${response.data.message}`);
+      } else {
+        alert(response.data.message);
+      }
+    } catch (err) {
+      console.error("API Error: ", err);
+      alert('An error occurred while creating the user.');
+    }
+  };
+
+  // Check if the current role should disable the button
+  const isButtonDisabled = ['Agent', 'Supervisor', 'User', 'Report'].includes(role);
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-100 to-slate-300">
       <div className="bg-white p-8 rounded-lg shadow-lg max-w-2xl w-full">
@@ -140,19 +147,24 @@ const CreateUser = () => {
             </div>
             <div className="mb-6">
               <label htmlFor="rolename" className="block text-gray-700 font-medium mb-2">Role</label>
-              <input
-                type="text"
+              <select
                 id="rolename"
                 value={formData.rolename}
                 onChange={handleChange}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500"
-                placeholder="Enter your role name"
-              />
+              >
+                <option value="" disabled>Select role</option>
+                <option value="Admin">Admin</option>
+                <option value="User">User</option>
+                <option value="Agent">Agent</option>
+                <option value="Supervisor">Supervisor</option>
+              </select>
             </div>
           </div>
           <button
             type="submit"
-            className="w-full bg-blue-500 text-white font-medium py-3 rounded-lg hover:bg-blue-600 transition duration-300"
+            className={`w-full py-3 rounded-lg transition duration-300 ${isButtonDisabled ? 'bg-gray-400 cursor-not-allowed' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+            disabled={isButtonDisabled}
           >
             Signup
           </button>
