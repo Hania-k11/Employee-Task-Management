@@ -42,7 +42,7 @@ const AgentSupervisor = () => {
                             <th className="py-2 px-4 border-b">Start Date</th>
                             <th className="py-2 px-4 border-b">End Date</th>
                             <th className="py-2 px-4 border-b">Status</th>
-                            <th className="py-2 px-4 border-b">Action</th>
+                            {/* <th className="py-2 px-4 border-b">Action</th> */}
                         </tr>
                     </thead>
                     <tbody>
@@ -67,7 +67,7 @@ const AgentSupervisor = () => {
                                         {task.Status}
                                     </span>
                                 </td>
-                                <td className="py-2 px-4 border-b">
+                                {/* <td className="py-2 px-4 border-b">
                                     <button
                                         className={`px-4 py-2 text-white rounded ${
                                             task.action === 'Submitted'
@@ -79,7 +79,7 @@ const AgentSupervisor = () => {
                                     >
                                         {task.action}
                                     </button>
-                                </td>
+                                </td> */}
                             </tr>
                         ))}
                     </tbody>

@@ -4,7 +4,7 @@ const AgentAdmin = () => {
   const [tasks, setTasks] = useState([]);
   const [selectedTask, setSelectedTask] = useState(null);
   const [showPopup, setShowPopup] = useState(false);
-  const [remarks, setRemarks] = useState(''); // Added state for admin remarks
+  const [remarks, setRemarks] = useState(''); // State for admin remarks
 
   useEffect(() => {
     // Fetch tasks from the API
@@ -51,10 +51,13 @@ const AgentAdmin = () => {
         // Update the task status locally
         setTasks((prevTasks) =>
           prevTasks.map((task) =>
-            task.TokenID === selectedTask.TokenID ? { ...task, Status: 'Approved' } : task
+            task.tokenID === selectedTask.tokenID
+              ? { ...task, Status: 'Approved' } // Update only the selected task
+              : task
           )
         );
         setShowPopup(false);
+        setSelectedTask(null); // Clear selected task
       } else {
         const errorData = await response.json();
         alert(`Error: ${errorData.message}`);
@@ -70,7 +73,7 @@ const AgentAdmin = () => {
       alert('Please add remarks before rejecting.');
       return;
     }
-  
+
     try {
       const response = await fetch('http://localhost:3000/api/rejectToken', {
         method: 'POST',
@@ -82,20 +85,21 @@ const AgentAdmin = () => {
           AdminRemarks: remarks,
         }),
       });
-  
+
       if (response.ok) {
         const data = await response.json();
         alert(data.message);
-  
+
         // Update the task status locally
         setTasks((prevTasks) =>
           prevTasks.map((task) =>
-            task.TokenID === selectedTask.tokenID
-              ? { ...task, Status: 'Rejected' } // Ensure to use `TokenID` if that's your unique identifier
+            task.tokenID === selectedTask.tokenID
+              ? { ...task, Status: 'Rejected' } // Update only the selected task
               : task
           )
         );
         setShowPopup(false);
+        setSelectedTask(null); // Clear selected task
       } else {
         const errorData = await response.json();
         alert(`Error: ${errorData.message}`);
@@ -105,7 +109,6 @@ const AgentAdmin = () => {
       console.error(error);
     }
   };
-  
 
   const handleClosePopup = () => {
     setShowPopup(false);
