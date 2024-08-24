@@ -206,7 +206,7 @@ const AgentAdmin = () => {
         <table className="min-w-full bg-white border border-gray-300 table-auto">
           <thead>
             <tr className="bg-gray-200 text-gray-700">
-              <th className="py-2 px-2 border-b">Agent ID</th>
+              <th className="py-2 px-2 border-b">Agent ID </th>
               <th className="py-2 px-2 border-b">Supervisor ID</th>
               <th className="py-2 px-2 border-b">Supervisor Name</th>
               <th className="py-2 px-2 border-b">Agent Name</th>
@@ -290,13 +290,19 @@ const AgentAdmin = () => {
                   />
                 </div>
                 <div className="mb-4">
-                  <label className="block mb-1 font-semibold">New End Date:</label>
-                  <input
-                    type="date"
-                    value={selectedTask?.newEndDate || ''}
-                    onChange={(e) => setSelectedTask({ ...selectedTask, newEndDate: e.target.value })}
+                  <label className="block mb-1 font-semibold">Assign to New Agent:</label>
+                  <select
+                    
                     className="border p-2 w-full"
-                  />
+                  >
+                    <option value="">Select an agent</option>
+                    {agents.map((agent) => (
+                      <option key={agent.AgentID}>
+                        {agent.AgentName}
+                      </option>
+                    ))}
+                  </select>
+
                 </div>
                 <button
                   onClick={handleRescheduleConfirm}
