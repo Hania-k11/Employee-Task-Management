@@ -11,7 +11,7 @@ const Supervisor = () => {
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
 
-    const supervisor = useContext(AuthContext);
+    const { userid, role, name } = useContext(AuthContext);
 
     useEffect(() => {
         const today = new Date().toISOString().split('T')[0];
@@ -19,8 +19,10 @@ const Supervisor = () => {
 
         const fetchAgentsAndTasks = async () => {
             try {
-                const agentsResponse = await axios.get('http://localhost:3000/api/allAgents');
-                const tasksResponse = await axios.get('http://localhost:3000/api/allTasks');
+                const [agentsResponse, tasksResponse] = await Promise.all([
+                    axios.get('http://localhost:3000/api/allAgents'),
+                    axios.get('http://localhost:3000/api/allTasks')
+                ]);
     
                 setAgents(agentsResponse.data.data || []);
                 setTasks(tasksResponse.data.data || []);
@@ -41,8 +43,9 @@ const Supervisor = () => {
         try {
             const response = await axios.post('http://localhost:3000/api/assignTask', {
                 taskid: selectedTask,
-                supervisorid: supervisor.userid,
+                supervisorid: userid,
                 agentid: selectedAgent,
+                start_date: startDate,  // Include start_date in the request
                 end_date: endDate,
                 remarks: target,
             });
@@ -61,17 +64,17 @@ const Supervisor = () => {
             }
         } catch (error) {
             const errorMessage = error.response?.data?.message || 'Failed to assign task due to an error.';
-        console.error('Failed to assign task:', errorMessage);
-        alert(errorMessage);
+            console.error('Failed to assign task:', errorMessage);
+            alert(errorMessage);
         }
     };
 
-    const isSupervisor = supervisor.role === 'Supervisor';
+    const isSupervisor = role === 'Supervisor';
 
     return (
         <div className="container mx-auto p-6">
-            {supervisor.role === 'Supervisor' && (
-                <h1 className="text-3xl font-bold mb-6">Supervisor: {supervisor.name}</h1>
+            {isSupervisor && (
+                <h1 className="text-3xl font-bold mb-6">Supervisor: {name}</h1>
             )}
             <div className="mb-4">
                 <label className="block text-gray-700 mb-2">Select Agent</label>
@@ -79,7 +82,7 @@ const Supervisor = () => {
                     className="w-full p-2 border rounded"
                     value={selectedAgent}
                     onChange={(e) => setSelectedAgent(e.target.value)}
-                    // disabled={!isSupervisor} // Disable if not supervisor
+                    disabled={!isSupervisor}  // Disable if not supervisor
                 >
                     <option value="">-- Select Agent --</option>
                     {agents.map(agent => (
@@ -95,6 +98,7 @@ const Supervisor = () => {
                     className="w-full p-2 border rounded"
                     value={selectedTask}
                     onChange={(e) => setSelectedTask(e.target.value)}
+                    disabled={!isSupervisor}  // Disable if not supervisor
                 >
                     <option value="">-- Select Task --</option>
                     {tasks.map(task => (
@@ -111,6 +115,7 @@ const Supervisor = () => {
                     className="w-full p-2 border rounded"
                     value={target}
                     onChange={(e) => setTarget(e.target.value)}
+                    disabled={!isSupervisor}  // Disable if not supervisor
                 />
             </div>
             <div className="mb-4">
@@ -120,7 +125,7 @@ const Supervisor = () => {
                     className="w-full p-2 border rounded"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
-                    readOnly
+                    
                 />
             </div>
             <div className="mb-4">
@@ -130,6 +135,7 @@ const Supervisor = () => {
                     className="w-full p-2 border rounded"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
+                    disabled={!isSupervisor}  // Disable if not supervisor
                 />
             </div>
             <button 
