@@ -3,201 +3,216 @@ import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
 const AgentAdmin = () => {
-  const [tasks, setTasks] = useState([]);
-  const [selectedTask, setSelectedTask] = useState(null);
-  const [agents, setAgents] = useState([]);
+    const [tasks, setTasks] = useState([]);
+    const [selectedTask, setSelectedTask] = useState(null);
+    const [agents, setAgents] = useState([]);
+    const [showPopup, setShowPopup] = useState(false);
+    const [remarks, setRemarks] = useState('');
+    const [isRescheduling, setIsRescheduling] = useState(false);
+    const { userid } = useContext(AuthContext);
 
+    useEffect(() => {
+        fetchTasks();
+        
+    }, []);
 
-  const [showPopup, setShowPopup] = useState(false);
-  const [remarks, setRemarks] = useState(''); // State for admin remarks
-  const [isRescheduling, setIsRescheduling] = useState(false); // State to track rescheduling
-  const { userid } = useContext(AuthContext); // Get the userid from the AuthContext
+    useEffect(() => {
+        if (selectedTask && selectedTask.AgentID) {
+            fetchAgents(selectedTask.AgentID);
+            console.log(selectedTask.AgentID);
+        }
+    }, [selectedTask]);
 
-
-  useEffect(() => {
-    fetchTasks();
-    fetchAgents();
-  }, []);
-
-  
     const fetchTasks = async () => {
-      try {
-        const response = await fetch('http://localhost:3000/api/AgentSupervisorTasks');
-        const data = await response.json();
-        setTasks(data);
-      } catch (error) {
-        console.error('Error fetching tasks:', error);
-      }
+        try {
+            const response = await fetch('http://localhost:3000/api/AgentSupervisorTasks');
+            const data = await response.json();
+            setTasks(data);
+        } catch (error) {
+            console.error('Error fetching tasks:', error);
+        }
     };
 
     const fetchAgents = async (excludedAgentId) => {
-    try {
-      const response = await axios.get('/api/getAgentsWithMinimumTasksExcluding', {
-        params: { excludedAgentId : selectedTask.AgentID } // Pass excludedAgentId as a query parameter
-      });
-      setAgents(response.data);
-    } catch (error) {
-      console.error('Error fetching agents:', error);
-    }
+        try {
+          console.log('id id idyyyy:', excludedAgentId);
+            const response = await axios.get(`http://localhost:3000/api/getAgentsWithMinimumTasksExcluding/${excludedAgentId}`);
+            if (Array.isArray(response.data)) {
+                setAgents(response.data);
+            } else {
+                console.error('Expected an array but received:', response.data);
+            }
+        } catch (error) {
+            console.error('Error fetching agents:', error);
+        }
+    };
+
+    const isTaskOverdue = (endDate) => {
+        const today = new Date();
+        const end = new Date(endDate);
+        return today > end;
+    };
+
+    const handlePendingClick = (task) => {
+        setSelectedTask(task);
+        setIsRescheduling(false);
+        setShowPopup(true);
+        fetchAgents(task.AgentID);
+    };
+
+    const handleRescheduleClick = (task) => {
+      
+        setSelectedTask(task);
+        setIsRescheduling(true);
+        setShowPopup(true);
+        fetchAgents(task.AgentID);
+    };
+
+    const handleRescheduleConfirm = async () => {
+      if (!selectedTask?.newEndDate) {
+          alert('Please select a new end date.');
+          return;
+      }
+  
+      try {
+          const response = await fetch('http://localhost:3000/api/RescheduleTask', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                  taskid: selectedTask.taskID,  // Assuming 'taskID' is the correct property name
+                  agentid: selectedTask.newAgentID,  // Assuming 'agentID' is the correct property name
+                  approverID: userid,  // Assuming 'userid' is the current user's ID
+                  end_date: selectedTask.newEndDate,
+                  remarks: selectedTask.remarks || '',  // Optional remarks field
+              }),
+          });
+  
+          if (response.ok) {
+              const data = await response.json();
+              alert(data.message);
+              setTasks((prevTasks) =>
+                  prevTasks.map((task) =>
+                      task.taskID === selectedTask.taskID
+                          ? { ...task, end_date: selectedTask.newEndDate }
+                          : task
+                  )
+              );
+              setShowPopup(false);
+              setSelectedTask(null);
+          } else {
+              const errorData = await response.json();
+              alert(`Error: ${errorData.message}`);
+          }
+      } catch (error) {
+          alert('An error occurred while rescheduling the task.');
+          console.error(error);
+      }
   };
+  
 
+    const handleApprove = async () => {
+        if (!remarks) {
+            alert('Please add remarks before approving.');
+            return;
+        }
 
-  const isTaskOverdue = (endDate) => {
-    const today = new Date();
-    const end = new Date(endDate);
-    return today > end;
-  };
+        if (!selectedTask || !selectedTask.tokenID) {
+            alert('No task selected or missing tokenID.');
+            return;
+        }
 
-  const handlePendingClick = (task) => {
-    setSelectedTask(task);
-    setIsRescheduling(false);
-    setShowPopup(true);
-  };
+        if (!userid) {
+            alert('User ID is missing.');
+            return;
+        }
 
-  const handleRescheduleClick = (task) => {
-    setSelectedTask(task);
-    setIsRescheduling(true);
-    setShowPopup(true);
-  };
+        try {
+            const response = await fetch('http://localhost:3000/api/approveToken', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    tokenid: selectedTask.tokenID,
+                    AdminRemarks: remarks,
+                    userid: userid,
+                }),
+            });
 
-  const handleRescheduleConfirm = async () => {
-    if (!selectedTask?.newEndDate || !selectedTask?.newStartDate) {
-      alert('Please select new start and end dates.');
-      return;
-    }
+            if (response.ok) {
+                const data = await response.json();
+                alert(data.message);
+                setTasks((prevTasks) =>
+                    prevTasks.map((task) =>
+                        task.tokenID === selectedTask.tokenID
+                            ? { ...task, Status: 'Approved' }
+                            : task
+                    )
+                );
+                setShowPopup(false);
+                setSelectedTask(null);
+            } else {
+                const errorData = await response.json();
+                alert(`Error: ${errorData.message}`);
+            }
+        } catch (error) {
+            alert('An error occurred while approving the task.');
+            console.error(error);
+        }
+    };
 
-    try {
-      const response = await fetch('http://localhost:3000/api/rescheduleTask', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          tokenid: selectedTask.tokenID,
-          newStartDate: selectedTask.newStartDate,
-          newEndDate: selectedTask.newEndDate,
-          userid: userid,
-        }),
-      });
+    const handleReject = async () => {
+        if (!remarks) {
+            alert('Please add remarks before rejecting.');
+            return;
+        }
 
-      if (response.ok) {
-        const data = await response.json();
-        alert(data.message);
-        setTasks((prevTasks) =>
-          prevTasks.map((task) =>
-            task.tokenID === selectedTask.tokenID
-              ? { ...task, StartDate: selectedTask.newStartDate, EndDate: selectedTask.newEndDate }
-              : task
-          )
-        );
+        if (!selectedTask || !selectedTask.tokenID) {
+            alert('No task selected or missing tokenID.');
+            return;
+        }
+
+        try {
+            const response = await fetch('http://localhost:3000/api/rejectToken', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    tokenid: selectedTask.tokenID,
+                    AdminRemarks: remarks,
+                    userid: userid,
+                }),
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                alert(data.message);
+                setTasks((prevTasks) =>
+                    prevTasks.map((task) =>
+                        task.tokenID === selectedTask.tokenID
+                            ? { ...task, Status: 'Rejected' }
+                            : task
+                    )
+                );
+                setShowPopup(false);
+                setSelectedTask(null);
+            } else {
+                const errorData = await response.json();
+                alert(`Error: ${errorData.message}`);
+            }
+        } catch (error) {
+            alert('An error occurred while rejecting the task.');
+            console.error(error);
+        }
+    };
+
+    const handleClosePopup = () => {
         setShowPopup(false);
         setSelectedTask(null);
-      } else {
-        const errorData = await response.json();
-        alert(`Error: ${errorData.message}`);
-      }
-    } catch (error) {
-      alert('An error occurred while rescheduling the task.');
-      console.error(error);
-    }
-  };
-
-  const handleApprove = async () => {
-    if (!remarks) {
-      alert('Please add remarks before approving.');
-      return;
-    }
-
-    if (!selectedTask || !selectedTask.tokenID) {
-      alert('No task selected or missing tokenID.');
-      return;
-    }
-
-    if (!userid) {
-      alert('User ID is missing.');
-      return;
-    }
-
-    try {
-      const response = await fetch('http://localhost:3000/api/approveToken', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          tokenid: selectedTask.tokenID,
-          AdminRemarks: remarks,
-          userid: userid,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        alert(data.message);
-        setTasks((prevTasks) =>
-          prevTasks.map((task) =>
-            task.tokenID === selectedTask.tokenID
-              ? { ...task, Status: 'Approved' }
-              : task
-          )
-        );
-        setShowPopup(false);
-        setSelectedTask(null);
-      } else {
-        const errorData = await response.json();
-        alert(`Error: ${errorData.message}`);
-      }
-    } catch (error) {
-      alert('An error occurred while approving the task.');
-      console.error(error);
-    }
-  };
-
-  const handleReject = async () => {
-    if (!remarks) {
-      alert('Please add remarks before rejecting.');
-      return;
-    }
-
-    try {
-      const response = await fetch('http://localhost:3000/api/rejectToken', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          tokenid: selectedTask.tokenID,
-          AdminRemarks: remarks,
-          userid: userid,
-        }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        alert(data.message);
-        setTasks((prevTasks) =>
-          prevTasks.map((task) =>
-            task.tokenID === selectedTask.tokenID
-              ? { ...task, Status: 'Rejected' }
-              : task
-          )
-        );
-        setShowPopup(false);
-        setSelectedTask(null);
-      } else {
-        const errorData = await response.json();
-        alert(`Error: ${errorData.message}`);
-      }
-    } catch (error) {
-      alert('An error occurred while rejecting the task.');
-      console.error(error);
-    }
-  };
-
-  const handleClosePopup = () => {
-    setShowPopup(false);
-    setSelectedTask(null);
-  };
+    };
 
   return (
     <div className="p-6">
@@ -270,80 +285,89 @@ const AgentAdmin = () => {
       </div>
 
       {/* Popup for actions */}
-      {showPopup && (
-        <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50">
-          <div className="bg-white p-6 rounded shadow-lg max-w-sm w-full">
-            <h2 className="text-xl font-bold mb-4">{isRescheduling ? 'Reschedule Task' : 'Task Action'}</h2>
-            {isRescheduling ? (
-              <>
-                <p className="mb-2"><strong>Agent ID:</strong> {selectedTask?.AgentID}</p>
-                <p className="mb-2"><strong>Agent Name:</strong> {selectedTask?.AgentName}</p>
-                <p className="mb-2"><strong>Start Date:</strong> {selectedTask?.StartDate}</p>
-                <p className="mb-2"><strong>End Date:</strong> {selectedTask?.EndDate}</p>
-                <div className="mb-4">
-                  <label className="block mb-1 font-semibold">New Start Date:</label>
-                  <input
-                    type="date"
-                    value={selectedTask?.newStartDate || ''}
-                    onChange={(e) => setSelectedTask({ ...selectedTask, newStartDate: e.target.value })}
-                    className="border p-2 w-full"
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="block mb-1 font-semibold">Assign to New Agent:</label>
-                  <select
-                    
-                    className="border p-2 w-full"
-                  >
-                    <option value="">Select an agent</option>
-                    {agents.map((agent) => (
-                      <option key={agent.AgentID}>
-                        {agent.AgentName}
-                      </option>
-                    ))}
-                  </select>
-
-                </div>
-                <button
-                  onClick={handleRescheduleConfirm}
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                >
-                  Confirm Reschedule
-                </button>
-              </>
-            ) : (
-              <>
-                <div className="mb-4">
-                  <label className="block mb-1 font-semibold">Admin Remarks:</label>
-                  <textarea
-                    value={remarks}
-                    onChange={(e) => setRemarks(e.target.value)}
-                    className="border p-2 w-full h-24"
-                  />
-                </div>
-                <button
-                  onClick={handleApprove}
-                  className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-                >
-                  Approve
-                </button>
-                <button
-                  onClick={handleReject}
-                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 ml-4"
-                >
-                  Reject
-                </button>
-              </>
-            )}
-            <button
-              onClick={handleClosePopup}
-              className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 mt-4"
-            >
-              Close
-            </button>
+      {showPopup && selectedTask && (
+  <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50">
+    <div className="bg-white p-6 rounded shadow-lg max-w-sm w-full">
+      <h2 className="text-xl font-bold mb-4">{isRescheduling ? 'Reschedule Task' : 'Task Action'}</h2>
+      {isRescheduling ? (
+        <>
+          <p className="mb-2"><strong>Agent ID:</strong> {selectedTask?.AgentID}</p>
+          <p className="mb-2"><strong>Agent Name:</strong> {selectedTask?.AgentName}</p>
+          <p className="mb-2"><strong>Start Date:</strong> {selectedTask?.StartDate}</p>
+          <p className="mb-2"><strong>End Date:</strong> {selectedTask?.EndDate}</p>
+          <div className="mb-4">
+            <label className="block mb-1 font-semibold">New Start Date:</label>
+            <input
+              type="date"
+              value={selectedTask?.newStartDate || ''}
+              onChange={(e) => setSelectedTask({ ...selectedTask, newStartDate: e.target.value })}
+              className="border p-2 w-full"
+            />
           </div>
-        </div>
+          <div className="mb-4">
+            <label className="block mb-1 font-semibold">New End Date:</label>
+            <input
+              type="date"
+              value={selectedTask?.newEndDate || ''}
+              onChange={(e) => setSelectedTask({ ...selectedTask, newEndDate: e.target.value })}
+              className="border p-2 w-full"
+            />
+          </div>
+          <div className="mb-4">
+            <label className="block mb-1 font-semibold">Assign to New Agent:</label>
+            <select 
+        className="w-full p-2 border rounded"
+        value={selectedTask?.newAgentID || ''}
+        onChange={(e) => setSelectedTask({ ...selectedTask, newAgentID: e.target.value })}
+    >
+        <option value="">-- Select Agent --</option>
+        {agents.map(agent => (
+            <option key={agent.AgentID} value={agent.AgentID}>
+                {agent.AgentName}
+            </option>
+        ))}
+    </select>
+          </div>
+          <button
+            onClick={handleRescheduleConfirm}
+            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+          >
+            Confirm Reschedule
+          </button>
+        </>
+      ) : (
+        <>
+          <div className="mb-4">
+            <label className="block mb-1 font-semibold">Admin Remarks:</label>
+            <textarea
+              value={remarks}
+              onChange={(e) => setRemarks(e.target.value)}
+              className="border p-2 w-full h-24"
+            />
+          </div>
+          <button
+            onClick={handleApprove}
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+          >
+            Approve
+          </button>
+          <button
+            onClick={handleReject}
+            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 ml-4"
+          >
+            Reject
+          </button>
+        </>
       )}
+      <button
+        onClick={handleClosePopup}
+        className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400 mt-4"
+      >
+        Close
+      </button>
+    </div>
+  </div>
+)}
     </div>
   );
 };
