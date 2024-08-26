@@ -53,6 +53,9 @@ const AgentAdmin = () => {
         return today > end;
     };
 
+
+
+    
     const handlePendingClick = (task) => {
         setSelectedTask(task);
         setIsRescheduling(false);
@@ -60,38 +63,44 @@ const AgentAdmin = () => {
         fetchAgents(task.AgentID);
     };
 
+
+
+
     const handleRescheduleClick = (task) => {
-      
-        setSelectedTask(task);
+      const today = new Date().toISOString().split('T')[0];
+      setSelectedTask({ ...task, newStartDate: today });
         setIsRescheduling(true);
         setShowPopup(true);
         fetchAgents(task.AgentID);
     };
 
+
+    
+
     const handleRescheduleConfirm = async () => {
-      if (!selectedTask?.newEndDate) {
-          alert('Please select a new end date.');
+      if (!selectedTask || !selectedTask.newAgentID) {
+          console.log('chhhhhhhy', selectedTask.newAgentID);
+          console.log('chhhhhhhyyyyyyyyyyy', selectedTask.newEndDate);
+          alert("Please select an agent before proceeding.");
           return;
       }
   
       try {
-          const response = await fetch('http://localhost:3000/api/RescheduleTask', {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-              },
-              body: JSON.stringify({
-                  taskid: selectedTask.taskID,  // Assuming 'taskID' is the correct property name
-                  agentid: selectedTask.newAgentID,  // Assuming 'agentID' is the correct property name
-                  approverID: userid,  // Assuming 'userid' is the current user's ID
-                  end_date: selectedTask.newEndDate,
-                  remarks: selectedTask.remarks || '',  // Optional remarks field
-              }),
+          console.log('chhhhhhh', selectedTask.newAgentID);
+          console.log('chhhhhhhyyyyyyyyyyy', selectedTask.newEndDate);
+  
+          const response = await axios.post('http://localhost:3000/api/RescheduleTask', {
+            taskID: selectedTask.taskID,
+            agentID: selectedTask.newAgentID,
+            approverID: userid, 
+            end_date: selectedTask.newEndDate,
+           
           });
   
-          if (response.ok) {
-              const data = await response.json();
-              alert(data.message);
+          console.log("Response from API:", response.data);
+  
+          if (response.data.success) {
+              alert(response.data.message);
               setTasks((prevTasks) =>
                   prevTasks.map((task) =>
                       task.taskID === selectedTask.taskID
@@ -102,12 +111,11 @@ const AgentAdmin = () => {
               setShowPopup(false);
               setSelectedTask(null);
           } else {
-              const errorData = await response.json();
-              alert(`Error: ${errorData.message}`);
+              alert(response.data.message);
           }
       } catch (error) {
-          alert('An error occurred while rescheduling the task.');
-          console.error(error);
+          console.error('An error occurred:', error);
+          alert('error');
       }
   };
   
@@ -163,6 +171,23 @@ const AgentAdmin = () => {
         }
     };
 
+   // Function to format date as YYYY/MM/DD
+const formatDate = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+// Example usage
+const startDate = new Date();
+const endDate = new Date();
+const newStartDate = new Date();
+
+
+console.log(formatDate(startDate)); // Output: YYYY/MM/DD
+
+  console.log(formatDate(startDate)); // Output: YYYY/MM/DD
     const handleReject = async () => {
         if (!remarks) {
             alert('Please add remarks before rejecting.');
@@ -242,8 +267,8 @@ const AgentAdmin = () => {
                 <td className="py-2 px-2 border-b">{task.SupervisorName}</td>
                 <td className="py-2 px-2 border-b">{task.AgentName}</td>
                 <td className="py-2 px-2 border-b">{task.TaskName}</td>
-                <td className="py-2 px-2 border-b">{task.StartDate}</td>
-                <td className="py-2 px-2 border-b">{task.EndDate}</td>
+                <td className="py-2 px-2 border-b">{formatDate(new Date(task.StartDate))}</td>
+                <td className="py-2 px-2 border-b">{formatDate(new Date(task.EndDate))}</td>
                 <td className="py-2 px-2 border-b">{task.NumberOfTasksAssigned}</td>
                 <td className="py-2 px-2 border-b">
                   {task.Status === 'Pending' ? (
@@ -293,8 +318,10 @@ const AgentAdmin = () => {
         <>
           <p className="mb-2"><strong>Agent ID:</strong> {selectedTask?.AgentID}</p>
           <p className="mb-2"><strong>Agent Name:</strong> {selectedTask?.AgentName}</p>
-          <p className="mb-2"><strong>Start Date:</strong> {selectedTask?.StartDate}</p>
-          <p className="mb-2"><strong>End Date:</strong> {selectedTask?.EndDate}</p>
+          <p className="mb-2"><strong>Start Date:</strong> {formatDate(new Date(selectedTask.StartDate))}
+          </p>
+          <p className="mb-2"><strong>End Date:</strong> {formatDate(new Date(selectedTask.EndDate))}
+          </p>
           <div className="mb-4">
             <label className="block mb-1 font-semibold">New Start Date:</label>
             <input
@@ -308,7 +335,8 @@ const AgentAdmin = () => {
             <label className="block mb-1 font-semibold">New End Date:</label>
             <input
               type="date"
-              value={selectedTask?.newEndDate || ''}
+              value = {formatDate(new Date(selectedTask?.newEndDate || ''))} 
+              
               onChange={(e) => setSelectedTask({ ...selectedTask, newEndDate: e.target.value })}
               className="border p-2 w-full"
             />
@@ -317,12 +345,16 @@ const AgentAdmin = () => {
             <label className="block mb-1 font-semibold">Assign to New Agent:</label>
             <select 
         className="w-full p-2 border rounded"
+
         value={selectedTask?.newAgentID || ''}
-        onChange={(e) => setSelectedTask({ ...selectedTask, newAgentID: e.target.value })}
+        onChange={(e) => {
+          console.log('Selected AgentID:', e.target.value);
+          setSelectedTask({ ...selectedTask, newAgentID: e.target.value });
+      }}
     >
         <option value="">-- Select Agent --</option>
         {agents.map(agent => (
-            <option key={agent.AgentID} value={agent.AgentID}>
+            <option key={agent.agentid} value={agent.agentid}>
                 {agent.AgentName}
             </option>
         ))}
