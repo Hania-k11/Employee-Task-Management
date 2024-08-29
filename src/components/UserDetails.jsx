@@ -6,9 +6,9 @@ import { useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import Logs from './Logs'; 
 import Supervisor from './Supervisor';
-import AgentAdmin from './AgentAdmin'; // Import the role-specific component
-import AgentSupervisor from './AgentSupervisor'; // Import the role-specific component
-import Agent from './Agent'; // Import the default component
+import AgentAdmin from './AgentAdmin'; 
+import AgentSupervisor from './AgentSupervisor'; 
+import Agent from './Agent'; 
 
 const UserDetails = () => {
     const home = useContext(AuthContext);
@@ -143,7 +143,7 @@ const UserDetails = () => {
                 return (
                     <div>
                         <h1 className="text-4xl font-bold mb-6 text-center text-gray-800">Register User</h1>
-                        <CreateUser /> {/* Add your Register User form or content here */}
+                        <CreateUser /> 
                     </div>
                 );
             case 'Report':
@@ -157,7 +157,7 @@ const UserDetails = () => {
                 return (
                     <div>
                         <h1 className="text-4xl font-bold mb-6 text-center text-gray-800">Supervisor</h1>
-                        <Supervisor /> {/* Render Supervisor component */}
+                        <Supervisor /> 
                     </div>
                 );
             case 'Agent':
@@ -165,14 +165,14 @@ const UserDetails = () => {
                     return (
                         <div>
                             <h1 className="text-4xl font-bold mb-6 text-center text-gray-800">Agent - Admin View</h1>
-                            <AgentAdmin /> {/* Render AgentAdmin component */}
+                            <AgentAdmin /> 
                         </div>
                     );
                 } else if (home.role === 'Supervisor') {
                     return (
                         <div>
                             <h1 className="text-4xl font-bold mb-6 text-center text-gray-800">Agent - Supervisor View</h1>
-                            <AgentSupervisor /> {/* Render AgentSupervisor component */}
+                            <AgentSupervisor /> 
                         </div>
                     );
                 } else {

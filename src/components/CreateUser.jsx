@@ -3,7 +3,7 @@ import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 
 const CreateUser = () => {
-  const { role } = useContext(AuthContext); // Get the role from AuthContext
+  const { role } = useContext(AuthContext);
   
   const [formData, setFormData] = useState({
     userName: '',
@@ -24,7 +24,7 @@ const CreateUser = () => {
   const handleSubmit = async (event) => {
     event.preventDefault();
 
-    // Validate all fields are filled
+    
     for (const [key, value] of Object.entries(formData)) {
       if (!value.trim()) {
         alert(`Please fill in the ${key}`);
@@ -57,7 +57,6 @@ const CreateUser = () => {
     }
   };
 
-  // Check if the current role should disable the button
   const isButtonDisabled = ['Agent', 'Supervisor', 'User', 'Report'].includes(role);
 
   return (

@@ -3,10 +3,11 @@ import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 
 const AgentSupervisor = () => {
-    const { userid } = useContext(AuthContext); // Assuming supervisorid is stored in AuthContext
+    const { userid } = useContext(AuthContext); 
     const [tasks, setTasks] = useState([]);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(true);
+
 
     useEffect(() => {
         const fetchTasks = async () => {
@@ -42,7 +43,7 @@ const AgentSupervisor = () => {
                             <th className="py-2 px-4 border-b">Start Date</th>
                             <th className="py-2 px-4 border-b">End Date</th>
                             <th className="py-2 px-4 border-b">Status</th>
-                            {/* <th className="py-2 px-4 border-b">Action</th> */}
+                            
                         </tr>
                     </thead>
                     <tbody>

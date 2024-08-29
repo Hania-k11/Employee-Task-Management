@@ -11,7 +11,7 @@ const Agent = () => {
         const fetchAgentTasks = async () => {
             try {
                 const response = await axios.get(`http://localhost:3000/api/getTasksByAgent/${userid}`);
-                console.log('Fetched tasks:', response.data); // Log the fetched tasks
+                console.log('Fetched tasks:', response.data); 
                 setTasks(response.data);
             } catch (error) {
                 console.error('Error fetching agent tasks:', error);
@@ -23,16 +23,16 @@ const Agent = () => {
     }, [userid]);
 
     const handleButtonClick = async (taskid) => {
-        console.log('Button clicked for taskId:', taskid); // Log the taskId
+        console.log('Button clicked for taskId:', taskid); 
 
         try {
             const response = await axios.post('http://localhost:3000/api/submitButton', {
                 agentid: userid,
-                taskid: taskid // Pass the taskId directly
+                taskid: taskid 
             });
 
             if (response.data.success) {
-                // Update only the specific task that was clicked
+                
                 setTasks(prevTasks =>
                     prevTasks.map(task =>
                         task.taskid === taskid
@@ -81,7 +81,7 @@ const Agent = () => {
                             <p className="text-gray-600">End Date: {task.end_date}</p>
                         </div>
                         <button
-                            onClick={() => handleButtonClick(task.taskid)} // Pass task.taskId
+                            onClick={() => handleButtonClick(task.taskid)} 
                             className={`px-4 py-2 rounded transition duration-200 ${getButtonStyles(task)}`}
                             disabled={task.submittedFlag || new Date(task.end_date) <= new Date()}
                         >

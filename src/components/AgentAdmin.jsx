@@ -54,7 +54,6 @@ const AgentAdmin = () => {
     };
 
 
-
     
     const handlePendingClick = (task) => {
         setSelectedTask(task);
@@ -63,8 +62,14 @@ const AgentAdmin = () => {
         fetchAgents(task.AgentID);
     };
 
-
-
+    useEffect(() => {
+      if (selectedTask && selectedTask.isResheduled) {
+        const updatedTask = { ...selectedTask, isResheduled: true };
+        setTasks(prevTasks => prevTasks.map(task => task.TaskID === updatedTask.TaskID ? updatedTask : task));
+      }
+    
+    }, [selectedTask]);
+    
 
     const handleRescheduleClick = (task) => {
       const today = new Date().toISOString().split('T')[0];
@@ -72,50 +77,93 @@ const AgentAdmin = () => {
         setIsRescheduling(true);
         setShowPopup(true);
         fetchAgents(task.AgentID);
-    };
+        this.forceUpdate();
 
+        console.log('reeeeeeesheeeeeeee',task.isResheduled)
+    };
 
     
 
     const handleRescheduleConfirm = async () => {
+    
       if (!selectedTask || !selectedTask.newAgentID) {
-          console.log('chhhhhhhy', selectedTask.newAgentID);
-          console.log('chhhhhhhyyyyyyyyyyy', selectedTask.newEndDate);
           alert("Please select an agent before proceeding.");
           return;
       }
   
-      try {
-          console.log('chhhhhhh', selectedTask.newAgentID);
-          console.log('chhhhhhhyyyyyyyyyyy', selectedTask.newEndDate);
+      console.log("Selected Task:", selectedTask);
+      console.log("Task ID:", selectedTask.TaskID);
+      console.log("New Agent ID:", Number(selectedTask.newAgentID));
+      console.log("Approver ID:", userid);
+      console.log("Start Date:", selectedTask.newStartDate);
+      console.log("End Date:", selectedTask.newEndDate);
   
-          const response = await axios.post('http://localhost:3000/api/RescheduleTask', {
-            taskID: selectedTask.taskID,
-            agentID: selectedTask.newAgentID,
-            approverID: userid, 
-            end_date: selectedTask.newEndDate,
-           
+      try {
+       
+          const rescheduleResponse = await axios.post('http://localhost:3000/api/rescheduleTasky', {
+              taskid: selectedTask.TaskID,
+              agentid: Number(selectedTask.newAgentID),
+              approverID: userid,
+              start_date: selectedTask.newStartDate,
+              end_date: selectedTask.newEndDate,
+              supervisorid: userid
           });
   
-          console.log("Response from API:", response.data);
+          
+          console.log("Response from rescheduleTasky API:", rescheduleResponse.data);
   
-          if (response.data.success) {
-              alert(response.data.message);
-              setTasks((prevTasks) =>
-                  prevTasks.map((task) =>
-                      task.taskID === selectedTask.taskID
-                          ? { ...task, end_date: selectedTask.newEndDate }
-                          : task
-                  )
-              );
-              setShowPopup(false);
-              setSelectedTask(null);
+          
+          // alert(rescheduleResponse.data.message);
+  
+          if (rescheduleResponse.data.success) {
+              alert('Task rescheduled successfully.');
+  
+              const updateResponse = await axios.post('http://localhost:3000/api/updateRescheduled', {
+                  tokenid: selectedTask.tokenID 
+              });
+  
+              console.log("Response from updateRescheduled API:", updateResponse.data);
+  
+              if (updateResponse.data.success) {
+                  alert('Task is marked as rescheduled.');
+  
+                  
+                  setTasks(prevTasks =>
+                      prevTasks.map(task =>
+                          task.TaskID === selectedTask.TaskID
+                              ? { ...task, end_date: selectedTask.newEndDate }
+                              : task
+                      )
+                  );
+  
+                  setShowPopup(false);
+                  setSelectedTask(null);
+              } else {
+             
+                  alert(`Error updating rescheduled flag: ${updateResponse.data.message}`);
+              }
           } else {
-              alert(response.data.message);
+            
+              alert(`Error rescheduling task: ${rescheduleResponse.data.message}`);
           }
       } catch (error) {
           console.error('An error occurred:', error);
-          alert('error');
+          console.log('Error:', error);
+
+  
+          const errorMessage = error.response?.data?.message || 'An unexpected error occurred.';
+          // alert(errorMessage);
+  
+        
+          if (error.response) {
+              console.error('Response data:', error.response.data);
+              console.error('Response status:', error.response.status);
+              console.error('Response headers:', error.response.headers);
+          } else if (error.request) {
+              console.error('Request data:', error.request);
+          } else {
+              console.error('Error message:', error.message);
+          }
       }
   };
   
@@ -184,10 +232,10 @@ const startDate = new Date();
 const endDate = new Date();
 const newStartDate = new Date();
 
-
 console.log(formatDate(startDate)); // Output: YYYY/MM/DD
 
   console.log(formatDate(startDate)); // Output: YYYY/MM/DD
+
     const handleReject = async () => {
         if (!remarks) {
             alert('Please add remarks before rejecting.');
@@ -241,7 +289,7 @@ console.log(formatDate(startDate)); // Output: YYYY/MM/DD
 
   return (
     <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Agent and Supervisor Tasks {userid}</h1>
+      <h1 className="text-2xl font-bold mb-6">Agent and Supervisor Tasks</h1>
       <div className="overflow-x-auto">
         <table className="min-w-full bg-white border border-gray-300 table-auto">
           <thead>
@@ -295,12 +343,13 @@ console.log(formatDate(startDate)); // Output: YYYY/MM/DD
                 </td>
                 <td className="py-2 px-2 border-b">
                   {task.Status === 'Approved' && task.ActionByUser === 'Not Submitted' && (
-                    <button
-                      onClick={() => handleRescheduleClick(task)}
-                      className="bg-orange-500 text-white px-4 py-1 rounded hover:bg-orange-700"
-                    >
-                      Reschedule
-                    </button>
+                   <button
+                   onClick={() => handleRescheduleClick(task)}
+                   className={`px-4 py-1 rounded ${task.isResheduled ? 'bg-gray-500 cursor-not-allowed' : 'bg-orange-500 text-white hover:bg-orange-700'}`}
+                   disabled={task.isResheduled}
+               >
+                   {task.isResheduled ? 'Rescheduled' : 'Reschedule'}
+               </button>
                   )}
                 </td>
               </tr>
@@ -405,3 +454,4 @@ console.log(formatDate(startDate)); // Output: YYYY/MM/DD
 };
 
 export default AgentAdmin;
+

@@ -45,7 +45,7 @@ const Supervisor = () => {
                 taskid: selectedTask,
                 supervisorid: userid,
                 agentid: selectedAgent,
-                start_date: startDate,  // Include start_date in the request
+                start_date: startDate,  
                 end_date: endDate,
                 remarks: target,
             });
@@ -82,7 +82,7 @@ const Supervisor = () => {
                     className="w-full p-2 border rounded"
                     value={selectedAgent}
                     onChange={(e) => setSelectedAgent(e.target.value)}
-                    disabled={!isSupervisor}  // Disable if not supervisor
+                    disabled={!isSupervisor}  
                 >
                     <option value="">-- Select Agent --</option>
                     {agents.map(agent => (
@@ -98,7 +98,7 @@ const Supervisor = () => {
                     className="w-full p-2 border rounded"
                     value={selectedTask}
                     onChange={(e) => setSelectedTask(e.target.value)}
-                    disabled={!isSupervisor}  // Disable if not supervisor
+                    disabled={!isSupervisor}  
                 >
                     <option value="">-- Select Task --</option>
                     {tasks.map(task => (
@@ -115,7 +115,7 @@ const Supervisor = () => {
                     className="w-full p-2 border rounded"
                     value={target}
                     onChange={(e) => setTarget(e.target.value)}
-                    disabled={!isSupervisor}  // Disable if not supervisor
+                    disabled={!isSupervisor}  
                 />
             </div>
             <div className="mb-4">
@@ -135,13 +135,13 @@ const Supervisor = () => {
                     className="w-full p-2 border rounded"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
-                    disabled={!isSupervisor}  // Disable if not supervisor
+                    disabled={!isSupervisor}  
                 />
             </div>
             <button 
                 onClick={handleAssignTask}
                 className={`bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition duration-200 ${!isSupervisor ? 'opacity-50 cursor-not-allowed' : ''}`}
-                disabled={!isSupervisor} // Disable button if not supervisor
+                disabled={!isSupervisor} 
             >
                 Assign Task
             </button>
